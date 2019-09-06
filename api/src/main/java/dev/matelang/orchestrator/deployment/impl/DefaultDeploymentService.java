@@ -9,21 +9,19 @@ import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AppsV1Api;
 import io.kubernetes.client.apis.CoreV1Api;
 import io.kubernetes.client.models.V1DeploymentList;
-import io.kubernetes.client.models.V1ServiceList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-
-import java.util.stream.Collectors;
 
 @Service
 @Slf4j
 @RequiredArgsConstructor
 public class DefaultDeploymentService implements DeploymentService {
 
-    private final static int PAGE_SIZE_LIST = 1;
+    private final static int PAGE_SIZE_LIST = 5;
+    private final static int K8S_CLIENT_TIMEOUT = 30;
+    private final static String K8S_CLIENT_PRETTY_PRINT = null;
 
-    private final CoreV1Api coreV1Api;
     private final AppsV1Api appsV1Api;
 
     @Override
@@ -38,13 +36,14 @@ public class DefaultDeploymentService implements DeploymentService {
         V1DeploymentList v1DepList;
 
         try {
-            v1DepList = appsV1Api.listNamespacedDeployment(request.getNamespace(), null, request.getPaginationToken(), null,
-                    null, PAGE_SIZE_LIST, null, 30, false);
+            v1DepList = appsV1Api.listNamespacedDeployment(request.getNamespace(), K8S_CLIENT_PRETTY_PRINT,
+                    request.getPaginationToken(), null,
+                    null, PAGE_SIZE_LIST, null, K8S_CLIENT_TIMEOUT, false);
         } catch (ApiException e) {
             throw new RuntimeException(e);
         }
 
-        DeploymentListResult result = DtoModelMapper.of(v1DepList);
+        DeploymentListResult result = K8sClientDtoMapper.of(v1DepList);
 
         return result;
     }

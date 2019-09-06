@@ -6,10 +6,4 @@ import lombok.Value;
 public class DeploymentCreationRequest {
 
     private ContainerReference reference;
-
-    public static class ContainerReference {
-        private String registry;
-        private String image;
-        private String version;
-    }
 }

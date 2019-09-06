@@ -1,7 +1,6 @@
 package dev.matelang.orchestrator.deployment.impl;
 
 import dev.matelang.orchestrator.deployment.model.Deployment;
-import dev.matelang.orchestrator.deployment.model.DeploymentCreationResult;
 import dev.matelang.orchestrator.deployment.model.DeploymentListResult;
 import io.kubernetes.client.models.V1Deployment;
 import io.kubernetes.client.models.V1DeploymentList;
@@ -9,21 +8,23 @@ import org.springframework.util.StringUtils;
 
 import java.util.stream.Collectors;
 
-public class DtoModelMapper {
-
-    public DeploymentCreationResult of() {
-        DeploymentCreationResult.DeploymentCreationResultBuilder builder = DeploymentCreationResult.builder();
-
-        return builder.build();
-    }
+public class K8sClientDtoMapper {
 
     static Deployment of(V1Deployment v1Deployment) {
         Deployment.DeploymentBuilder builder = Deployment.builder();
 
-        builder.namespace(v1Deployment.getMetadata().getNamespace());
-        builder.name(v1Deployment.getMetadata().getName());
+        builder
+                .namespace(v1Deployment.getMetadata().getNamespace())
+                .name(v1Deployment.getMetadata().getName());
 
-        builder.raw(v1Deployment.toString());
+        builder.status(Deployment.Status.builder()
+                .availableReplicas(v1Deployment.getStatus().getAvailableReplicas())
+                .readyReplicas(v1Deployment.getStatus().getReadyReplicas())
+                .replicas(v1Deployment.getStatus().getReplicas())
+                .unavailableReplicas(v1Deployment.getStatus().getUnavailableReplicas())
+                .updatedReplicas(v1Deployment.getStatus().getUpdatedReplicas())
+                .build()
+        );
 
         return builder.build();
     }
@@ -34,7 +35,7 @@ public class DtoModelMapper {
         builder.deployments(
                 v1DeploymentList.getItems()
                         .stream()
-                        .map(DtoModelMapper::of)
+                        .map(K8sClientDtoMapper::of)
                         .collect(Collectors.toList())
         );
 
