@@ -26,6 +26,34 @@ public class K8sClientDtoMapper {
                 .build()
         );
 
+        Deployment.PodSpec podSpec = Deployment.PodSpec.builder()
+                .containers(
+                        v1Deployment.getSpec().getTemplate().getSpec().getContainers().stream()
+                                .map(v1c -> Deployment.Container.builder()
+                                        .args(v1c.getArgs())
+                                        .command(v1c.getCommand())
+                                        .image(v1c.getImage())
+                                        .imagePullPolicy(v1c.getImagePullPolicy())
+                                        .name(v1c.getName())
+                                        .workingDir(v1c.getWorkingDir())
+                                        .build()
+                                )
+                                .collect(Collectors.toList())
+                )
+                .build();
+
+        builder.spec(Deployment.Spec.builder()
+                .minReadySeconds(v1Deployment.getSpec().getMinReadySeconds())
+                .paused(v1Deployment.getSpec().isPaused())
+                .replicas(v1Deployment.getSpec().getReplicas())
+                .revisionHistoryLimit(v1Deployment.getSpec().getRevisionHistoryLimit())
+                .podTemplateSpec(Deployment.PodTemplateSpec.builder()
+                        .podSpec(podSpec)
+                        .build()
+                )
+                .build()
+        );
+
         return builder.build();
     }
 
