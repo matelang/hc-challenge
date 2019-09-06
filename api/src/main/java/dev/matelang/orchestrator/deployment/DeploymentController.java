@@ -28,7 +28,7 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 public class DeploymentController {
 
     private static final String QUERY_PARAM_NAMESPACE = "namespace";
-    public static final String QUERY_PARAM_PAGINATION_TOKEN = "paginationToken";
+    private static final String QUERY_PARAM_PAGINATION_TOKEN = "paginationToken";
 
     private final DeploymentService deploymentService;
 
@@ -44,8 +44,6 @@ public class DeploymentController {
     @GetMapping(produces = {"application/hal+json"})
     public Resources<Deployment> listDeployment(@Valid DeploymentListRequest req) {
         DeploymentListResult result = deploymentService.listDeployments(req);
-
-        log.info("Got = {}", result);
 
         List<Link> links = new ArrayList<>();
         links.add(

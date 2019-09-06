@@ -5,5 +5,5 @@ import lombok.Value;
 @Value
 public class DeploymentCreationRequest {
 
-    private ContainerReference reference;
+    private String namespace;
 }

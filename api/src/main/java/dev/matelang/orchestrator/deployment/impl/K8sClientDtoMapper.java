@@ -13,8 +13,7 @@ public class K8sClientDtoMapper {
     static Deployment of(V1Deployment v1Deployment) {
         Deployment.DeploymentBuilder builder = Deployment.builder();
 
-        builder
-                .namespace(v1Deployment.getMetadata().getNamespace())
+        builder.namespace(v1Deployment.getMetadata().getNamespace())
                 .name(v1Deployment.getMetadata().getName());
 
         builder.status(Deployment.Status.builder()
