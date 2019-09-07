@@ -2,17 +2,26 @@ dev:
   matelang:
     orchestrator:
       k8s-client:
-        #        kubeconfigpath: "/home/mate/.kube/config"
-        config:
-          base-path: "https://localhost"
-          ca: ""
-          auth:
-            access-token: "coolAT"
-            username: ""
-            password: ""
-            client-cert: ""
-            client-key: ""
+        kubeconfigpath: "/home/mate/.kube/config"
+#        config:
+#          base-path: "https://localhost"
+#          ca: ""
+#          auth:
+#            access-token: "coolAT"
+#            username: ""
+#            password: ""
+#            client-cert: ""
+#            client-key: ""
 
 spring:
   main:
     banner-mode: "off"
+  security:
+    oauth2:
+      resourceserver:
+        jwt:
+          issuer-uri: "https://accounts.google.com" # "/.well-known/openid-configuration" is automatically appended
+
+google:
+  key: "462925264156-ltj51nhq4l155f87utmtcmkbidb14l9r.apps.googleusercontent.com"
+  secret: "wHKbsN7E6Z5lkBnitNx5Mr0s"

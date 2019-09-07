@@ -44,13 +44,11 @@ public class KubernetesClientConfiguration {
 
     @Configuration
     @ConditionalOnProperty(value = "dev.matelang.orchestrator.k8s-client.config.base-path")
-    @Slf4j
     public static class KubernetesClientExplicitConfigurer {
         @Bean
         public ApiClient apiClientFromProperties(KubernetesClientProperties properties) {
             Authentication auth;
             KubernetesClientProperties.Config.Auth authConfig = properties.getConfig().getAuth();
-            log.info("Cfg = {}", authConfig);
 
             if (!StringUtils.isEmpty(authConfig.getAccessToken())) {
                 auth = new AccessTokenAuthentication(authConfig.getAccessToken());
