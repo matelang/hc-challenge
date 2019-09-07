@@ -5,6 +5,8 @@ import qwest from 'qwest';
 
 import './App.css';
 
+// https://medium.com/@alexanderleon/implement-social-authentication-with-react-restful-api-9b44f4714fa
+
 class App extends Component {
 
   constructor() {
@@ -123,7 +125,7 @@ class App extends Component {
     return (
       <div className="App">
         <h1>Kubernetes Orchestrator</h1>
-        {/* {sessionHandler} */}
+        {sessionHandler}
         <div style={{ margin: '0 auto' }}>
           {content}
         </div>

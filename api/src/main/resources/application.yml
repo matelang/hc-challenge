@@ -20,8 +20,13 @@ spring:
     oauth2:
       resourceserver:
         jwt:
-          issuer-uri: "https://accounts.google.com" # "/.well-known/openid-configuration" is automatically appended
-
-google:
-  key: "462925264156-ltj51nhq4l155f87utmtcmkbidb14l9r.apps.googleusercontent.com"
-  secret: "wHKbsN7E6Z5lkBnitNx5Mr0s"
+          # Google has in its issued it tokens the value accounts.google.com in the iss claim, but Spring assumes it is
+          # equal to the issuer-uri, which must be defined with a full URI scheme, containing HTTPS, which makes the
+          # JWT Issuer Validator fail!
+          issuer-uri: "accounts.google.com"
+          jwk-set-uri: "https://www.googleapis.com/oauth2/v3/certs"
+      client:
+        registration:
+          google:
+            client-id: "462925264156-ltj51nhq4l155f87utmtcmkbidb14l9r.apps.googleusercontent.com"
+            client-secret: "wHKbsN7E6Z5lkBnitNx5Mr0s"
