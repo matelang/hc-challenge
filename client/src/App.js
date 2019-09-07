@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import { GoogleLogin } from 'react-google-login';
 import InfiniteScroll from 'react-infinite-scroller';
+import qwest from 'qwest';
 
 import './App.css';
 
@@ -8,7 +9,15 @@ class App extends Component {
 
   constructor() {
     super();
-    this.state = { isAuthenticated: false, user: null, token: '' };
+
+    this.state = {
+      isAuthenticated: false,
+      user: null,
+      token: '',
+      deployments: [],
+      hasMoreItems: true,
+      nextHref: null
+    };
   }
 
   logout = () => {
@@ -26,33 +35,31 @@ class App extends Component {
   loadItems(page) {
     var self = this;
 
-    var url = api.baseUrl + '/users/8665091/favorites';
+    let api = "http://localhost:8080";
+    var url = api + '/v1/deployments?namespace=default';
     if (this.state.nextHref) {
       url = this.state.nextHref;
     }
 
     qwest.get(url, {
-      client_id: api.client_id,
       linked_partitioning: 1,
-      page_size: 10
+      page_size: 3
     }, {
       cache: true
     })
       .then(function (xhr, resp) {
-        if (resp) {
-          var tracks = self.state.tracks;
-          resp.collection.map((track) => {
-            if (track.artwork_url == null) {
-              track.artwork_url = track.user.avatar_url;
-            }
+        resp = JSON.parse(resp)
 
-            tracks.push(track);
+        if (resp) {
+          var deployments = self.state.deployments;
+          resp["_embedded"]['deploymentList'].map((d) => {
+            deployments.push(d);
           });
 
-          if (resp.next_href) {
+          if (resp["_links"]["next"]) {
             self.setState({
-              tracks: tracks,
-              nextHref: resp.next_href
+              deployments: deployments,
+              nextHref: resp["_links"]["next"]["href"]
             });
           } else {
             self.setState({
@@ -90,6 +97,15 @@ class App extends Component {
     const loader = <div className="loader">Loading ...</div>;
 
     var items = [];
+    this.state.deployments.map((d, i) => {
+      items.push(
+        <tr>
+          <td>{i}</td>
+          <td>{d.name}</td>
+          <td>{d.spec.podTemplateSpec.podSpec.containers[0].image}</td>
+        </tr>
+      );
+    });
 
     let content = <InfiniteScroll
       pageStart={0}
@@ -97,15 +113,20 @@ class App extends Component {
       hasMore={this.state.hasMoreItems}
       loader={loader}>
 
-      <div className="tracks">
-        {items}
-      </div>
+      <table border="2">
+        <tbody>
+          {items}
+        </tbody>
+      </table>
     </InfiniteScroll>
 
     return (
       <div className="App">
+        <h1>Kubernetes Orchestrator</h1>
         {/* {sessionHandler} */}
-        {content}
+        <div style={{ margin: '0 auto' }}>
+          {content}
+        </div>
       </div>
     );
   }
