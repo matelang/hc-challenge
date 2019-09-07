@@ -9,10 +9,15 @@ import io.kubernetes.client.util.credentials.AccessTokenAuthentication;
 import io.kubernetes.client.util.credentials.Authentication;
 import io.kubernetes.client.util.credentials.ClientCertificateAuthentication;
 import io.kubernetes.client.util.credentials.UsernamePasswordAuthentication;
+import lombok.Data;
+import lombok.Getter;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.autoconfigure.condition.ConditionalOnProperty;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.stereotype.Component;
 import org.springframework.util.StringUtils;
 
 import java.io.FileReader;
@@ -22,13 +27,14 @@ import java.io.IOException;
 public class KubernetesClientConfiguration {
 
     @Configuration
-    @ConditionalOnProperty(value = "dev.matelang.orchestrator.k8s-client.kubeconfig")
+    @ConditionalOnProperty(value = "dev.matelang.orchestrator.k8s-client.kubeconfigpath")
     public static class KubernetesClientFileConfigurer {
+
         @Bean
-        public ApiClient apiClientFromFile(@Value("dev.matelang.orchestrator.k8s-client.kubeconfig") String kubeConfigPath) {
+        public ApiClient apiClientFromFile(KubernetesClientProperties properties) {
             try {
                 return ClientBuilder
-                        .kubeconfig(KubeConfig.loadKubeConfig(new FileReader(kubeConfigPath)))
+                        .kubeconfig(KubeConfig.loadKubeConfig(new FileReader(properties.getKubeconfigpath())))
                         .build();
             } catch (IOException e) {
                 throw new RuntimeException("Failed to read Kube Config!", e);
@@ -37,23 +43,23 @@ public class KubernetesClientConfiguration {
     }
 
     @Configuration
-    @ConditionalOnProperty(value = "dev.matelang.orchestrator.k8s-client.kubeconfig", matchIfMissing = true)
+    @ConditionalOnProperty(value = "dev.matelang.orchestrator.k8s-client.config.base-path")
+    @Slf4j
     public static class KubernetesClientExplicitConfigurer {
         @Bean
-        public ApiClient apiClientFromProperties(@Value("dev.matelang.orchestrator.k8s-client.config.basePath") String basePath,
-                                                 @Value("dev.matelang.orchestrator.k8s-client.config.ca") String ca,
-                                                 @Value("dev.matelang.orchestrator.k8s-client.config.auth.accessToken") String accessToken,
-                                                 @Value("dev.matelang.orchestrator.k8s-client.config.auth.username") String userName,
-                                                 @Value("dev.matelang.orchestrator.k8s-client.config.auth.password") String password,
-                                                 @Value("dev.matelang.orchestrator.k8s-client.config.auth.clientcert.cert") String clientCert,
-                                                 @Value("dev.matelang.orchestrator.k8s-client.config.auth.clientcert.key") String clientKey) {
+        public ApiClient apiClientFromProperties(KubernetesClientProperties properties) {
             Authentication auth;
-            if (!StringUtils.isEmpty(accessToken)) {
-                auth = new AccessTokenAuthentication(accessToken);
-            } else if (!StringUtils.isEmpty(userName) && !StringUtils.isEmpty(password)) {
-                auth = new UsernamePasswordAuthentication(userName, password);
-            } else if (!StringUtils.isEmpty(clientCert) && !StringUtils.isEmpty(clientKey)) {
-                auth = new ClientCertificateAuthentication(clientCert.getBytes(), clientKey.getBytes());
+            KubernetesClientProperties.Config.Auth authConfig = properties.getConfig().getAuth();
+            log.info("Cfg = {}", authConfig);
+
+            if (!StringUtils.isEmpty(authConfig.getAccessToken())) {
+                auth = new AccessTokenAuthentication(authConfig.getAccessToken());
+            } else if (!StringUtils.isEmpty(authConfig.getUsername()) && !StringUtils.isEmpty(authConfig.getPassword())) {
+                auth = new UsernamePasswordAuthentication(authConfig.getUsername(), authConfig.getPassword());
+            } else if (!StringUtils.isEmpty(authConfig.getClientCert()) && !StringUtils.isEmpty(authConfig.getClientKey())) {
+                auth = new ClientCertificateAuthentication(authConfig.getClientCert().getBytes(),
+                        authConfig.getClientKey().getBytes()
+                );
             } else {
                 throw new RuntimeException("A form of authentication must be set for the K8S Client!");
             }
@@ -62,8 +68,8 @@ public class KubernetesClientConfiguration {
                 return ClientBuilder
                         .standard()
                         .setAuthentication(auth)
-                        .setBasePath(basePath)
-                        .setCertificateAuthority(ca.getBytes())
+                        .setBasePath(properties.getConfig().getBasePath())
+                        .setCertificateAuthority(properties.getConfig().getCa().getBytes())
                         .setVerifyingSsl(true)
                         .build();
             } catch (IOException e) {
@@ -80,6 +86,30 @@ public class KubernetesClientConfiguration {
     @Bean
     public AppsV1Api appsV1Api(ApiClient apiClient) {
         return new AppsV1Api(apiClient);
+    }
+
+    @Component
+    @Data
+    @ConfigurationProperties("dev.matelang.orchestrator.k8s-client")
+    public static class KubernetesClientProperties {
+        private String kubeconfigpath;
+        private Config config;
+
+        @Data
+        public static class Config {
+            private String basePath;
+            private String ca;
+            private Auth auth;
+
+            @Data
+            public static class Auth {
+                private String accessToken;
+                private String username;
+                private String password;
+                private String clientCert;
+                private String clientKey;
+            }
+        }
     }
 
 }

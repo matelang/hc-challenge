@@ -1,19 +1,18 @@
-spring:
-  main:
-    banner-mode: "off"
-
 dev:
   matelang:
     orchestrator:
       k8s-client:
-        kubeconfig: "/home/mate/.kube/config"
+        #        kubeconfigpath: "/home/mate/.kube/config"
         config:
-          basePath: "https://localhost"
+          base-path: "https://localhost"
           ca: ""
           auth:
-            accessToken: ""
+            access-token: "coolAT"
             username: ""
             password: ""
-            clientcert:
-              cert: ""
-              key: ""
+            client-cert: ""
+            client-key: ""
+
+spring:
+  main:
+    banner-mode: "off"
