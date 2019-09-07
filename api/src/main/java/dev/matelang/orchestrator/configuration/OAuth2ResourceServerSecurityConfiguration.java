@@ -4,7 +4,7 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configuration.WebSecurityConfigurerAdapter;
 
-//@EnableWebSecurity
+@EnableWebSecurity
 public class OAuth2ResourceServerSecurityConfiguration extends WebSecurityConfigurerAdapter {
 
     @Override
@@ -14,7 +14,7 @@ public class OAuth2ResourceServerSecurityConfiguration extends WebSecurityConfig
                 .csrf().disable()
                 .authorizeRequests()
                 .antMatchers("/message/**").hasAuthority("SCOPE_message:read")
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
                 .and()
                 .oauth2ResourceServer()
                 .jwt();

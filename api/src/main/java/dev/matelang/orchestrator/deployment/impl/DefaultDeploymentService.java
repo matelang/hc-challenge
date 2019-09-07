@@ -18,7 +18,7 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class DefaultDeploymentService implements DeploymentService {
 
-    private final static int PAGE_SIZE_LIST = 5;
+    private final static int PAGE_SIZE_LIST = 3;
     private final static int K8S_CLIENT_TIMEOUT = 30;
     private final static String K8S_CLIENT_PRETTY_PRINT = null;
     private final static String K8S_CLIENT_DRY_RUN = null;
