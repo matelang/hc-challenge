@@ -1,6 +1,6 @@
 package dev.matelang.orchestrator.deployment.impl;
 
-import dev.matelang.orchestrator.OrchestratorApplicationException;
+import dev.matelang.orchestrator.exception.OrchestratorApplicationException;
 import dev.matelang.orchestrator.deployment.DeploymentService;
 import dev.matelang.orchestrator.deployment.model.DeploymentCreationRequest;
 import dev.matelang.orchestrator.deployment.model.DeploymentCreationResult;

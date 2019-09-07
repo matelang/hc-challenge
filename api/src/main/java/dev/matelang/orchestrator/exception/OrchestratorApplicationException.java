@@ -1,4 +1,4 @@
-package dev.matelang.orchestrator;
+package dev.matelang.orchestrator.exception;
 
 public class OrchestratorApplicationException extends RuntimeException {
 
