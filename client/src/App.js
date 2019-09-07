@@ -2,10 +2,9 @@ import React, { Component } from 'react';
 import { GoogleLogin } from 'react-google-login';
 import InfiniteScroll from 'react-infinite-scroller';
 import qwest from 'qwest';
+import jwt_decode from 'jwt-decode';
 
 import './App.css';
-
-// https://medium.com/@alexanderleon/implement-social-authentication-with-react-restful-api-9b44f4714fa
 
 class App extends Component {
 
@@ -27,7 +26,7 @@ class App extends Component {
   };
 
   googleResponse = (e) => {
-    console.log("Hello " + JSON.stringify(e))
+    this.setState({ isAuthenticated: true, token: e['tokenId'], user: jwt_decode(e['tokenId']).name })
   };
 
   onFailure = (error) => {
@@ -47,7 +46,10 @@ class App extends Component {
       linked_partitioning: 1,
       page_size: 3
     }, {
-      cache: true
+      cache: true,
+      headers: {
+        'Authorization': 'Bearer ' + this.state.token
+      }
     })
       .then(function (xhr, resp) {
         resp = JSON.parse(resp)
@@ -73,29 +75,6 @@ class App extends Component {
   }
 
   render() {
-    let sessionHandler = !!this.state.isAuthenticated ?
-      (
-        <div>
-          <p>Authenticated</p>
-          <div>
-            {this.state.user.email}
-          </div>
-          <div>
-            <button onClick={this.logout} className="button">Log out</button>
-          </div>
-        </div>
-      ) :
-      (
-        <div>
-          <GoogleLogin
-            clientId="462925264156-ltj51nhq4l155f87utmtcmkbidb14l9r.apps.googleusercontent.com"
-            buttonText="Login"
-            onSuccess={this.googleResponse}
-            onFailure={this.googleResponse}
-          />
-        </div>
-      );
-
     const loader = <div className="loader">Loading ...</div>;
 
     var items = [];
@@ -109,7 +88,7 @@ class App extends Component {
       );
     });
 
-    let content = <InfiniteScroll
+    let deploymentsTable = <InfiniteScroll
       pageStart={0}
       loadMore={this.loadItems.bind(this)}
       hasMore={this.state.hasMoreItems}
@@ -122,13 +101,35 @@ class App extends Component {
       </table>
     </InfiniteScroll>
 
+    let content = !!this.state.isAuthenticated ?
+      (
+        <div>
+          <p>Authenticated</p>
+          <div>
+            {this.state.user}
+          </div>
+          <div>
+            <button onClick={this.logout} className="button">Log out</button>
+          </div>
+          {deploymentsTable}
+        </div>
+      ) :
+      (
+        <div>
+          <h3>Please Log In</h3>
+          <GoogleLogin
+            clientId="462925264156-ltj51nhq4l155f87utmtcmkbidb14l9r.apps.googleusercontent.com"
+            buttonText="Login"
+            onSuccess={this.googleResponse}
+            onFailure={this.googleResponse}
+          />
+        </div>
+      );
+
     return (
       <div className="App">
         <h1>Kubernetes Orchestrator</h1>
-        {sessionHandler}
-        <div style={{ margin: '0 auto' }}>
-          {content}
-        </div>
+        {content}
       </div>
     );
   }
