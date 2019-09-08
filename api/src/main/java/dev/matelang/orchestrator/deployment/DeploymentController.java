@@ -5,12 +5,14 @@ import dev.matelang.orchestrator.deployment.model.DeploymentCreationRequest;
 import dev.matelang.orchestrator.deployment.model.DeploymentCreationResult;
 import dev.matelang.orchestrator.deployment.model.DeploymentListRequest;
 import dev.matelang.orchestrator.deployment.model.DeploymentListResult;
+import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.hateoas.Link;
 import org.springframework.hateoas.Resources;
 import org.springframework.hateoas.config.EnableHypermediaSupport;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -25,19 +27,17 @@ import static org.springframework.hateoas.mvc.ControllerLinkBuilder.methodOn;
 @RequestMapping("/v1/deployments")
 @EnableHypermediaSupport(type = EnableHypermediaSupport.HypermediaType.HAL)
 @Slf4j
+@RequiredArgsConstructor
 public class DeploymentController {
 
     private static final String QUERY_PARAM_NAMESPACE = "namespace";
     private static final String QUERY_PARAM_PAGINATION_TOKEN = "paginationToken";
+    private static final String QUERY_PARAM_PAGE_SIZE = "pageSize";
 
     private final DeploymentService deploymentService;
 
-    public DeploymentController(DeploymentService deploymentService) {
-        this.deploymentService = deploymentService;
-    }
-
-    @PostMapping
-    public DeploymentCreationResult createDeployment(DeploymentCreationRequest req) {
+    @PostMapping(consumes = {"application/json"})
+    public DeploymentCreationResult createDeployment(@RequestBody @Valid DeploymentCreationRequest req) {
         return deploymentService.createDeployment(req);
     }
 

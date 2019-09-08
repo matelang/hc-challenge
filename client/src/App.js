@@ -6,27 +6,85 @@ import jwt_decode from 'jwt-decode';
 
 import './App.css';
 
+let api = "http://localhost:8080";
+let namespace = 'default';
+
 class App extends Component {
 
   constructor() {
     super();
 
     this.state = {
-      isAuthenticated: false,
-      user: null,
-      token: '',
+      isAuthenticated: localStorage.getItem('isAuthenticated') != null ? localStorage.getItem('isAuthenticated') : false,
+      user: localStorage.getItem('user') != null ? localStorage.getItem('user') : null,
+      token: localStorage.getItem('token') != null ? localStorage.getItem('token') : '',
       deployments: [],
       hasMoreItems: true,
-      nextHref: null
+      nextHref: null,
+      deplyName: '',
+      deplyImage: '',
+      deplyReplicas: 0,
+      deplyPorts: ''
     };
   }
 
   logout = () => {
     this.setState({ isAuthenticated: false, token: '', user: null })
+    localStorage.setItem("token", null)
+    localStorage.setItem("isAuthenticated", false)
+    localStorage.setItem("user", null)
   };
+
+  changeName = (e) => {
+    this.setState({ deplyName: e.target.value })
+  }
+
+  changeImage = (e) => {
+    this.setState({ deplyImage: e.target.value })
+  }
+
+  changeReplicas = (e) => {
+    this.setState({ deplyReplicas: e.target.value })
+  }
+
+  changePorts = (e) => {
+    this.setState({ deplyPorts: e.target.value })
+  }
+
+  handleCreateDeploy = () => {
+    var url = api + '/v1/deployments';
+
+    var data = {
+      namespace: "default",
+      name: this.state.deplyName,
+      replicas: this.state.deplyReplicas,
+      containers: [
+        {
+          name: this.state.deplyName,
+          image: this.state.deplyImage,
+          ports: [
+            {
+              containerPort: this.state.deplyPorts
+            }
+          ]
+        }	
+      ]
+    };
+
+    qwest.post(url,data,{
+      dataType: 'json',
+      headers: {
+        'Authorization': 'Bearer ' + this.state.token,
+        'Content-Type': 'application/json'
+      } 
+    })
+  }
 
   googleResponse = (e) => {
     this.setState({ isAuthenticated: true, token: e['tokenId'], user: jwt_decode(e['tokenId']).name })
+    localStorage.setItem("token", e['tokenId'])
+    localStorage.setItem("isAuthenticated", true)
+    localStorage.setItem("user", jwt_decode(e['tokenId']).name)
   };
 
   onFailure = (error) => {
@@ -36,8 +94,7 @@ class App extends Component {
   loadItems(page) {
     var self = this;
 
-    let api = "http://localhost:8080";
-    var url = api + '/v1/deployments?namespace=default';
+    var url = api + '/v1/deployments?namespace=' + namespace;
     if (this.state.nextHref) {
       url = this.state.nextHref;
     }
@@ -83,7 +140,17 @@ class App extends Component {
         <tr>
           <td>{i}</td>
           <td>{d.name}</td>
-          <td>{d.spec.podTemplateSpec.podSpec.containers[0].image}</td>
+          <td>{d.spec.podTemplateSpec.podSpec.containers
+            .map((c) => { return c.image })
+            .reduce((img, cat) => { return cat + '\n' + img }, '')}
+          </td>
+          <td>
+            Replicas: {d.status.replicas}<br />
+            Av: {d.status.availableReplicas}<br />
+            Rdy: {d.status.readyReplicas}<br />
+            UnAv: {d.status.unavailableReplicas}<br />
+            Up: {d.status.updatedReplicas}<br />
+          </td>
         </tr>
       );
     });
@@ -94,25 +161,53 @@ class App extends Component {
       hasMore={this.state.hasMoreItems}
       loader={loader}>
 
-      <table border="2">
+      <table class="deploymentsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Image name</th>
+            <th>Status</th>
+          </tr>
+        </thead>
         <tbody>
           {items}
         </tbody>
       </table>
     </InfiniteScroll>
 
+    let deploymentCreatorForm = <div class="deploymentCreator">
+      <form>
+        <label>
+          Name: <input type="text" value={this.state.deplyName} onChange={this.changeName} />
+        </label>
+
+        <label>
+          Replicas: <input type="text" value={this.state.deplyReplicas} onChange={this.changeReplicas} />
+        </label>
+
+        <label>
+          Container Image: <input type="text" value={this.state.deplyImage} onChange={this.changeImage} />
+        </label>
+
+        <label>
+          Container Ports: <input type="text" value={this.state.deplyPorts} onChange={this.changePorts} />
+        </label>
+
+        <input class="button" type="button" value="Create" onClick={this.handleCreateDeploy} />
+      </form>
+    </div>
+
     let content = !!this.state.isAuthenticated ?
       (
-        <div>
-          <p>Authenticated</p>
-          <div>
-            {this.state.user}
-          </div>
-          <div>
+        <span>
+          <div class="userPanel">
+            <span>Hello, {this.state.user}!</span>
             <button onClick={this.logout} className="button">Log out</button>
           </div>
+          {deploymentCreatorForm}
           {deploymentsTable}
-        </div>
+        </span>
       ) :
       (
         <div>
