@@ -53,23 +53,26 @@ class App extends Component {
 
   handleCreateDeploy = () => {
     var url = api + '/v1/deployments';
-    
-    qwest.post(url,{
+
+    var data = {
       namespace: "default",
-      name: "nginx-hc",
-      replicas: 2,
+      name: this.state.deplyName,
+      replicas: this.state.deplyReplicas,
       containers: [
         {
-          name: "nginx-hc",
-          image: "nginx:1.7.9",
+          name: this.state.deplyName,
+          image: this.state.deplyImage,
           ports: [
             {
-              containerPort: "80"
+              containerPort: this.state.deplyPorts
             }
           ]
         }	
       ]
-    },{
+    };
+
+    qwest.post(url,data,{
+      dataType: 'json',
       headers: {
         'Authorization': 'Bearer ' + this.state.token,
         'Content-Type': 'application/json'
