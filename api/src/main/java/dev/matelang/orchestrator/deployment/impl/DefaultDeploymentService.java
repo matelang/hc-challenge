@@ -8,6 +8,7 @@ import dev.matelang.orchestrator.deployment.model.DeploymentListResult;
 import dev.matelang.orchestrator.exception.OrchestratorApplicationException;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AppsV1Api;
+import io.kubernetes.client.models.V1Deployment;
 import io.kubernetes.client.models.V1DeploymentList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -18,7 +19,6 @@ import org.springframework.stereotype.Service;
 @RequiredArgsConstructor
 public class DefaultDeploymentService implements DeploymentService {
 
-    private final static int PAGE_SIZE_LIST = 3;
     private final static int K8S_CLIENT_TIMEOUT = 30;
     private final static String K8S_CLIENT_PRETTY_PRINT = null;
     private final static String K8S_CLIENT_DRY_RUN = null;
@@ -30,8 +30,8 @@ public class DefaultDeploymentService implements DeploymentService {
     @Override
     public DeploymentCreationResult createDeployment(DeploymentCreationRequest request) {
         try {
-            //TODO create deployment body
-            appsV1Api.createNamespacedDeployment(request.getNamespace(), null, K8S_CLIENT_PRETTY_PRINT,
+            V1Deployment body = K8sClientDtoMapper.of(request);
+            appsV1Api.createNamespacedDeployment(request.getNamespace(), body, K8S_CLIENT_PRETTY_PRINT,
                     K8S_CLIENT_DRY_RUN, null);
         } catch (ApiException e) {
             throw new OrchestratorApplicationException(GENERIC_EXCEPTION_MESSAGE, e);
@@ -49,7 +49,7 @@ public class DefaultDeploymentService implements DeploymentService {
         try {
             v1DepList = appsV1Api.listNamespacedDeployment(request.getNamespace(), K8S_CLIENT_PRETTY_PRINT,
                     request.getPaginationToken(), null,
-                    null, PAGE_SIZE_LIST, null, K8S_CLIENT_TIMEOUT, false);
+                    null, request.getPageSize(), null, K8S_CLIENT_TIMEOUT, false);
         } catch (ApiException e) {
             throw new OrchestratorApplicationException(GENERIC_EXCEPTION_MESSAGE, e);
         }

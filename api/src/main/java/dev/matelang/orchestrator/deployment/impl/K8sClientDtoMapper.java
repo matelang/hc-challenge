@@ -1,14 +1,73 @@
 package dev.matelang.orchestrator.deployment.impl;
 
 import dev.matelang.orchestrator.deployment.model.Deployment;
+import dev.matelang.orchestrator.deployment.model.DeploymentCreationRequest;
 import dev.matelang.orchestrator.deployment.model.DeploymentListResult;
+import io.kubernetes.client.models.V1Container;
+import io.kubernetes.client.models.V1ContainerPort;
 import io.kubernetes.client.models.V1Deployment;
 import io.kubernetes.client.models.V1DeploymentList;
+import io.kubernetes.client.models.V1DeploymentSpec;
+import io.kubernetes.client.models.V1LabelSelector;
+import io.kubernetes.client.models.V1ObjectMeta;
+import io.kubernetes.client.models.V1PodSpec;
+import io.kubernetes.client.models.V1PodTemplateSpec;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.util.StringUtils;
 
+import java.util.Map;
 import java.util.stream.Collectors;
 
-public class K8sClientDtoMapper {
+@Slf4j
+class K8sClientDtoMapper {
+
+    private static final String DEPLOYMENT_API_VERSION = "apps/v1";
+    private static final String DEPLOYMENT_KIND = "Deployment";
+
+    private static final String LABEL_APP = "app";
+
+    static V1Deployment of(DeploymentCreationRequest request) {
+        V1Deployment v1Deployment = new V1Deployment();
+
+        V1PodSpec v1PodSpec = new V1PodSpec()
+                .containers(
+                        request.getContainers().stream()
+                                .map(c -> new V1Container()
+                                        .name(c.getName())
+                                        .image(c.getImage())
+                                        .ports(c.getPorts().stream()
+                                                .map(p -> new V1ContainerPort()
+                                                        .containerPort(p.getContainerPort())
+                                                        .hostPort(p.getHostPort())
+                                                )
+                                                .collect(Collectors.toList())
+                                        )
+                                )
+                                .collect(Collectors.toList())
+                );
+
+        V1DeploymentSpec v1DeploymentSpec = new V1DeploymentSpec()
+                .replicas(request.getReplicas())
+                .selector(new V1LabelSelector().matchLabels(Map.of(LABEL_APP, request.getName())))
+                .template(
+                        new V1PodTemplateSpec()
+                                .metadata(new V1ObjectMeta().labels(Map.of(LABEL_APP, request.getName())))
+                                .spec(v1PodSpec)
+                );
+
+        v1Deployment
+                .apiVersion(DEPLOYMENT_API_VERSION)
+                .kind(DEPLOYMENT_KIND)
+                .metadata(new V1ObjectMeta()
+                        .name(request.getName())
+                        .labels(Map.of(LABEL_APP, request.getName()))
+                )
+                .spec(v1DeploymentSpec);
+
+
+        log.info("V1DEPL={}",v1Deployment);
+        return v1Deployment;
+    }
 
     static Deployment of(V1Deployment v1Deployment) {
         Deployment.DeploymentBuilder builder = Deployment.builder();
