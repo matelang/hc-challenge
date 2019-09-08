@@ -16,10 +16,11 @@ import io.kubernetes.client.models.V1Deployment;
 import io.kubernetes.client.models.V1DeploymentList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
-import java.time.ZoneId;
 import java.time.ZonedDateTime;
 
 @Service
@@ -33,6 +34,7 @@ public class DefaultDeploymentService implements DeploymentService {
 
     private final AppsV1Api appsV1Api;
     private final DeploymentRepository deploymentRepository;
+    private final ApplicationEventPublisher publisher;
 
     @Override
     public DeploymentCreationResult createDeployment(DeploymentCreationRequest request) {
@@ -41,16 +43,7 @@ public class DefaultDeploymentService implements DeploymentService {
                     createNamespacedDeployment(request.getNamespace(), K8sClientDtoMapper.of(request),
                             null, null, null);
 
-            DeploymentEntity entity = new DeploymentEntity();
-            entity.setName(request.getName());
-            entity.setDateTime(ZonedDateTime.now());
-            entity.setImages(
-                    createdDeployment.getSpec().getTemplate().getSpec()
-                            .getContainers()
-                            .stream()
-                            .map(V1Container::getImage).reduce("", (s, c) -> s + c)
-            );
-            deploymentRepository.save(entity);
+                publisher.publishEvent(new DeploymentCreatedEvent().setDeployment(createdDeployment));
 
             return DeploymentCreationResult.builder()
                     .uid(createdDeployment.getMetadata().getUid())
@@ -79,6 +72,20 @@ public class DefaultDeploymentService implements DeploymentService {
         DeploymentListResult result = K8sClientDtoMapper.of(v1DepList);
 
         return result;
+    }
+
+    @EventListener
+    public void onEvent(DeploymentCreatedEvent e){
+        DeploymentEntity entity = new DeploymentEntity();
+        entity.setName(e.getDeployment().getMetadata().getName());
+        entity.setDateTime(ZonedDateTime.now());
+        entity.setImages(
+                e.getDeployment().getSpec().getTemplate().getSpec()
+                        .getContainers()
+                        .stream()
+                        .map(V1Container::getImage).reduce("", (s, c) -> s + c)
+        );
+        deploymentRepository.save(entity);
     }
 
 }
