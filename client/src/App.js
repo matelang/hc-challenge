@@ -6,6 +6,9 @@ import jwt_decode from 'jwt-decode';
 
 import './App.css';
 
+let api = "http://localhost:8080";
+let namespace = 'default';
+
 class App extends Component {
 
   constructor() {
@@ -17,7 +20,11 @@ class App extends Component {
       token: localStorage.getItem('token') != null ? localStorage.getItem('token') : '',
       deployments: [],
       hasMoreItems: true,
-      nextHref: null
+      nextHref: null,
+      deplyName: '',
+      deplyImage: '',
+      deplyReplicas: 0,
+      deplyPorts: ''
     };
   }
 
@@ -27,6 +34,48 @@ class App extends Component {
     localStorage.setItem("isAuthenticated", false)
     localStorage.setItem("user", null)
   };
+
+  changeName = (e) => {
+    this.setState({ deplyName: e.target.value })
+  }
+
+  changeImage = (e) => {
+    this.setState({ deplyImage: e.target.value })
+  }
+
+  changeReplicas = (e) => {
+    this.setState({ deplyReplicas: e.target.value })
+  }
+
+  changePorts = (e) => {
+    this.setState({ deplyPorts: e.target.value })
+  }
+
+  handleCreateDeploy = () => {
+    var url = api + '/v1/deployments';
+    
+    qwest.post(url,{
+      namespace: "default",
+      name: "nginx-hc",
+      replicas: 2,
+      containers: [
+        {
+          name: "nginx-hc",
+          image: "nginx:1.7.9",
+          ports: [
+            {
+              containerPort: "80"
+            }
+          ]
+        }	
+      ]
+    },{
+      headers: {
+        'Authorization': 'Bearer ' + this.state.token,
+        'Content-Type': 'application/json'
+      } 
+    })
+  }
 
   googleResponse = (e) => {
     this.setState({ isAuthenticated: true, token: e['tokenId'], user: jwt_decode(e['tokenId']).name })
@@ -42,8 +91,7 @@ class App extends Component {
   loadItems(page) {
     var self = this;
 
-    let api = "http://localhost:8080";
-    var url = api + '/v1/deployments?namespace=default';
+    var url = api + '/v1/deployments?namespace=' + namespace;
     if (this.state.nextHref) {
       url = this.state.nextHref;
     }
@@ -125,13 +173,36 @@ class App extends Component {
       </table>
     </InfiniteScroll>
 
+    let deploymentCreatorForm = <div class="deploymentCreator">
+      <form>
+        <label>
+          Name: <input type="text" value={this.state.deplyName} onChange={this.changeName} />
+        </label>
+
+        <label>
+          Replicas: <input type="text" value={this.state.deplyReplicas} onChange={this.changeReplicas} />
+        </label>
+
+        <label>
+          Container Image: <input type="text" value={this.state.deplyImage} onChange={this.changeImage} />
+        </label>
+
+        <label>
+          Container Ports: <input type="text" value={this.state.deplyPorts} onChange={this.changePorts} />
+        </label>
+
+        <input class="button" type="button" value="Create" onClick={this.handleCreateDeploy} />
+      </form>
+    </div>
+
     let content = !!this.state.isAuthenticated ?
       (
         <span>
           <div class="userPanel">
-            <span>Hello, {this.state.user}</span>
+            <span>Hello, {this.state.user}!</span>
             <button onClick={this.logout} className="button">Log out</button>
           </div>
+          {deploymentCreatorForm}
           {deploymentsTable}
         </span>
       ) :
