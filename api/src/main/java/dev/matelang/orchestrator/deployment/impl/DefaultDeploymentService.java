@@ -20,8 +20,6 @@ import org.springframework.stereotype.Service;
 public class DefaultDeploymentService implements DeploymentService {
 
     private final static int K8S_CLIENT_TIMEOUT = 30;
-    private final static String K8S_CLIENT_PRETTY_PRINT = null;
-    private final static String K8S_CLIENT_DRY_RUN = null;
 
     private final static String GENERIC_EXCEPTION_MESSAGE = "K8s operation failed";
 
@@ -32,7 +30,7 @@ public class DefaultDeploymentService implements DeploymentService {
         try {
             V1Deployment createdDeployment = appsV1Api.
                     createNamespacedDeployment(request.getNamespace(), K8sClientDtoMapper.of(request),
-                            K8S_CLIENT_PRETTY_PRINT, K8S_CLIENT_DRY_RUN, null);
+                            null, null, null);
 
             return DeploymentCreationResult.builder()
                     .uid(createdDeployment.getMetadata().getUid())
@@ -47,7 +45,7 @@ public class DefaultDeploymentService implements DeploymentService {
         V1DeploymentList v1DepList;
 
         try {
-            v1DepList = appsV1Api.listNamespacedDeployment(request.getNamespace(), K8S_CLIENT_PRETTY_PRINT,
+            v1DepList = appsV1Api.listNamespacedDeployment(request.getNamespace(), null,
                     request.getPaginationToken(), null,
                     null, request.getPageSize(), null, K8S_CLIENT_TIMEOUT, false);
         } catch (ApiException e) {
