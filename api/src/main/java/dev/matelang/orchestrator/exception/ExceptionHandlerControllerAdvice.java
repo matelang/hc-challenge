@@ -40,7 +40,15 @@ public class ExceptionHandlerControllerAdvice {
         logException(ex, LogLevel.ERROR, true);
 
         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
-                .body(new ErrorDto(HttpStatus.INTERNAL_SERVER_ERROR, ex, ErrorCode.GENERIC));
+                .body(new ErrorDto(HttpStatus.INTERNAL_SERVER_ERROR, ex, ErrorCode.DEPLOYMENT_ALREADY_EXISTS));
+    }
+
+    @ExceptionHandler(DeploymentAlreadyExistsException.class)
+    public ResponseEntity<ErrorDto> process(DeploymentAlreadyExistsException ex) {
+        logException(ex, LogLevel.INFO, false);
+
+        return ResponseEntity.status(HttpStatus.CONFLICT)
+                .body(new ErrorDto(HttpStatus.CONFLICT, ex, ErrorCode.GENERIC));
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)

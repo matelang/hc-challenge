@@ -5,6 +5,7 @@ import dev.matelang.orchestrator.deployment.model.DeploymentCreationRequest;
 import dev.matelang.orchestrator.deployment.model.DeploymentCreationResult;
 import dev.matelang.orchestrator.deployment.model.DeploymentListRequest;
 import dev.matelang.orchestrator.deployment.model.DeploymentListResult;
+import dev.matelang.orchestrator.exception.DeploymentAlreadyExistsException;
 import dev.matelang.orchestrator.exception.OrchestratorApplicationException;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AppsV1Api;
@@ -12,6 +13,7 @@ import io.kubernetes.client.models.V1Deployment;
 import io.kubernetes.client.models.V1DeploymentList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 
 @Service
@@ -36,6 +38,10 @@ public class DefaultDeploymentService implements DeploymentService {
                     .uid(createdDeployment.getMetadata().getUid())
                     .build();
         } catch (ApiException e) {
+            if (HttpStatus.CONFLICT.value() == e.getCode()){
+                throw new DeploymentAlreadyExistsException("Deployment with that name already exists");
+            }
+            // we should treat other relevant cases here and create specific exception types
             throw new OrchestratorApplicationException(GENERIC_EXCEPTION_MESSAGE, e);
         }
     }
