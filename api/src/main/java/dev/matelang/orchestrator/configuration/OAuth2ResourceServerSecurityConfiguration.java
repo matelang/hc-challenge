@@ -11,11 +11,12 @@ public class OAuth2ResourceServerSecurityConfiguration extends WebSecurityConfig
     protected void configure(HttpSecurity http) throws Exception {
         // @formatter:off
         http
+                .headers().frameOptions().disable().and()
                 .cors()
                 .and()
                 .csrf().disable()
                 .authorizeRequests()
-                .antMatchers("/message/**").hasAuthority("SCOPE_message:read")
+                .antMatchers("/h2-console/**").permitAll()
                 .anyRequest().authenticated()
                 .and()
                 .oauth2ResourceServer()

@@ -21,6 +21,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.junit.MockitoJUnitRunner;
+import org.springframework.context.ApplicationEventPublisher;
 
 import java.util.Collections;
 import java.util.List;
@@ -63,7 +64,8 @@ public class DefaultDeploymentServiceTest {
     @Before
     public void init() {
         appsV1Api = mock(AppsV1Api.class);
-        victim = new DefaultDeploymentService(appsV1Api);
+        ApplicationEventPublisher publisher = mock(ApplicationEventPublisher.class);
+        victim = new DefaultDeploymentService(appsV1Api, null, publisher);
     }
 
     @Test

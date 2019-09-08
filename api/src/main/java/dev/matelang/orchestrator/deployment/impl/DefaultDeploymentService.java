@@ -1,20 +1,27 @@
 package dev.matelang.orchestrator.deployment.impl;
 
 import dev.matelang.orchestrator.deployment.DeploymentService;
+import dev.matelang.orchestrator.deployment.entity.DeploymentEntity;
 import dev.matelang.orchestrator.deployment.model.DeploymentCreationRequest;
 import dev.matelang.orchestrator.deployment.model.DeploymentCreationResult;
 import dev.matelang.orchestrator.deployment.model.DeploymentListRequest;
 import dev.matelang.orchestrator.deployment.model.DeploymentListResult;
+import dev.matelang.orchestrator.deployment.repo.DeploymentRepository;
 import dev.matelang.orchestrator.exception.DeploymentAlreadyExistsException;
 import dev.matelang.orchestrator.exception.OrchestratorApplicationException;
 import io.kubernetes.client.ApiException;
 import io.kubernetes.client.apis.AppsV1Api;
+import io.kubernetes.client.models.V1Container;
 import io.kubernetes.client.models.V1Deployment;
 import io.kubernetes.client.models.V1DeploymentList;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.context.ApplicationEventPublisher;
+import org.springframework.context.event.EventListener;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
+
+import java.time.ZonedDateTime;
 
 @Service
 @Slf4j
@@ -26,6 +33,8 @@ public class DefaultDeploymentService implements DeploymentService {
     private final static String GENERIC_EXCEPTION_MESSAGE = "K8s operation failed";
 
     private final AppsV1Api appsV1Api;
+    private final DeploymentRepository deploymentRepository;
+    private final ApplicationEventPublisher publisher;
 
     @Override
     public DeploymentCreationResult createDeployment(DeploymentCreationRequest request) {
@@ -34,11 +43,13 @@ public class DefaultDeploymentService implements DeploymentService {
                     createNamespacedDeployment(request.getNamespace(), K8sClientDtoMapper.of(request),
                             null, null, null);
 
+                publisher.publishEvent(new DeploymentCreatedEvent().setDeployment(createdDeployment));
+
             return DeploymentCreationResult.builder()
                     .uid(createdDeployment.getMetadata().getUid())
                     .build();
         } catch (ApiException e) {
-            if (HttpStatus.CONFLICT.value() == e.getCode()){
+            if (HttpStatus.CONFLICT.value() == e.getCode()) {
                 throw new DeploymentAlreadyExistsException("Deployment with that name already exists");
             }
             // we should treat other relevant cases here and create specific exception types
@@ -61,6 +72,20 @@ public class DefaultDeploymentService implements DeploymentService {
         DeploymentListResult result = K8sClientDtoMapper.of(v1DepList);
 
         return result;
+    }
+
+    @EventListener
+    public void onEvent(DeploymentCreatedEvent e){
+        DeploymentEntity entity = new DeploymentEntity();
+        entity.setName(e.getDeployment().getMetadata().getName());
+        entity.setDateTime(ZonedDateTime.now());
+        entity.setImages(
+                e.getDeployment().getSpec().getTemplate().getSpec()
+                        .getContainers()
+                        .stream()
+                        .map(V1Container::getImage).reduce("", (s, c) -> s + c)
+        );
+        deploymentRepository.save(entity);
     }
 
 }
