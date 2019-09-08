@@ -63,7 +63,7 @@ public class DefaultDeploymentServiceTest {
     @Before
     public void init() {
         appsV1Api = mock(AppsV1Api.class);
-        victim = new DefaultDeploymentService(appsV1Api);
+        victim = new DefaultDeploymentService(appsV1Api, null   );
     }
 
     @Test

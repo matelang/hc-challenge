@@ -16,6 +16,9 @@ dev:
 spring:
   main:
     banner-mode: "off"
+  h2:
+    console:
+      enabled: true
   security:
     oauth2:
       resourceserver:
