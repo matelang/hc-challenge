@@ -65,7 +65,6 @@ class K8sClientDtoMapper {
                 .spec(v1DeploymentSpec);
 
 
-        log.info("V1DEPL={}",v1Deployment);
         return v1Deployment;
     }
 

@@ -11,6 +11,7 @@ import javax.validation.constraints.Size;
 import java.util.Collections;
 import java.util.List;
 
+@Builder
 @Value
 public class DeploymentCreationRequest {
 

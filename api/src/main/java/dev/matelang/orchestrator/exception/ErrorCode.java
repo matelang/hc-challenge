@@ -1,5 +1,5 @@
 package dev.matelang.orchestrator.exception;
 
 public enum ErrorCode {
-    GENERIC
+    GENERIC, DEPLOYMENT_ALREADY_EXISTS
 }
