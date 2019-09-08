@@ -30,16 +30,16 @@ public class DefaultDeploymentService implements DeploymentService {
     @Override
     public DeploymentCreationResult createDeployment(DeploymentCreationRequest request) {
         try {
-            V1Deployment body = K8sClientDtoMapper.of(request);
-            appsV1Api.createNamespacedDeployment(request.getNamespace(), body, K8S_CLIENT_PRETTY_PRINT,
-                    K8S_CLIENT_DRY_RUN, null);
+            V1Deployment createdDeployment = appsV1Api.
+                    createNamespacedDeployment(request.getNamespace(), K8sClientDtoMapper.of(request),
+                            K8S_CLIENT_PRETTY_PRINT, K8S_CLIENT_DRY_RUN, null);
+
+            return DeploymentCreationResult.builder()
+                    .uid(createdDeployment.getMetadata().getUid())
+                    .build();
         } catch (ApiException e) {
             throw new OrchestratorApplicationException(GENERIC_EXCEPTION_MESSAGE, e);
         }
-
-        return DeploymentCreationResult.builder()
-                .status("cool")
-                .build();
     }
 
     @Override

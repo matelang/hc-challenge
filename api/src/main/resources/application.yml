@@ -25,8 +25,3 @@ spring:
           # JWT Issuer Validator fail!
           issuer-uri: "accounts.google.com"
           jwk-set-uri: "https://www.googleapis.com/oauth2/v3/certs"
-      client:
-        registration:
-          google:
-            client-id: "462925264156-ltj51nhq4l155f87utmtcmkbidb14l9r.apps.googleusercontent.com"
-            client-secret: "wHKbsN7E6Z5lkBnitNx5Mr0s"

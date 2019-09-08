@@ -6,5 +6,5 @@ import lombok.Value;
 @Value
 @Builder
 public class DeploymentCreationResult {
-    private String status;
+    private String uid;
 }

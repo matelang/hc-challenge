@@ -12,9 +12,9 @@ class App extends Component {
     super();
 
     this.state = {
-      isAuthenticated: false,
-      user: null,
-      token: '',
+      isAuthenticated: localStorage.getItem('isAuthenticated') != null ? localStorage.getItem('isAuthenticated') : false,
+      user: localStorage.getItem('user') != null ? localStorage.getItem('user') : null,
+      token: localStorage.getItem('token') != null ? localStorage.getItem('token') : '',
       deployments: [],
       hasMoreItems: true,
       nextHref: null
@@ -23,10 +23,16 @@ class App extends Component {
 
   logout = () => {
     this.setState({ isAuthenticated: false, token: '', user: null })
+    localStorage.setItem("token", null)
+    localStorage.setItem("isAuthenticated", false)
+    localStorage.setItem("user", null)
   };
 
   googleResponse = (e) => {
     this.setState({ isAuthenticated: true, token: e['tokenId'], user: jwt_decode(e['tokenId']).name })
+    localStorage.setItem("token", e['tokenId'])
+    localStorage.setItem("isAuthenticated", true)
+    localStorage.setItem("user", jwt_decode(e['tokenId']).name)
   };
 
   onFailure = (error) => {
@@ -83,7 +89,17 @@ class App extends Component {
         <tr>
           <td>{i}</td>
           <td>{d.name}</td>
-          <td>{d.spec.podTemplateSpec.podSpec.containers[0].image}</td>
+          <td>{d.spec.podTemplateSpec.podSpec.containers
+            .map((c) => { return c.image })
+            .reduce((img, cat) => { return cat + '\n' + img }, '')}
+          </td>
+          <td>
+            Replicas: {d.status.replicas}<br />
+            Av: {d.status.availableReplicas}<br />
+            Rdy: {d.status.readyReplicas}<br />
+            UnAv: {d.status.unavailableReplicas}<br />
+            Up: {d.status.updatedReplicas}<br />
+          </td>
         </tr>
       );
     });
@@ -94,7 +110,15 @@ class App extends Component {
       hasMore={this.state.hasMoreItems}
       loader={loader}>
 
-      <table border="2">
+      <table class="deploymentsTable">
+        <thead>
+          <tr>
+            <th>#</th>
+            <th>Name</th>
+            <th>Image name</th>
+            <th>Status</th>
+          </tr>
+        </thead>
         <tbody>
           {items}
         </tbody>
@@ -103,16 +127,13 @@ class App extends Component {
 
     let content = !!this.state.isAuthenticated ?
       (
-        <div>
-          <p>Authenticated</p>
-          <div>
-            {this.state.user}
-          </div>
-          <div>
+        <span>
+          <div class="userPanel">
+            <span>Hello, {this.state.user}</span>
             <button onClick={this.logout} className="button">Log out</button>
           </div>
           {deploymentsTable}
-        </div>
+        </span>
       ) :
       (
         <div>
