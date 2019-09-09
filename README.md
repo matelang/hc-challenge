@@ -52,34 +52,40 @@ $ npm start
 
 Open your browser (tested with Brave) Navigate to `http://localhost:3000`.
 
-## Project description (by huseinbabal)
-In this challenge, you are requested to implement a REST API in Spring Boot and UI (will be a plus) in any technology for orchestrating a Kubernetes cluster.
 
-Requirements
-User Spring Boot to create a REST API that has necessary endpoints to create & list deployment on Kubernetes
+# Design considerations
 
-Relay on REST Maturity Model to provide good interface to REST API consumers
+## Backend
 
-There will be a simple UI (if possible) to create and list deployments
+The backend application is a standard Spring Boot 2 application, which packages with an embedded Tomcat web container.
 
-If there is no UI, provide details for calling REST endpoints to create and list deployments in README.md file
+I used certain starters and their imported autoconfigurations to embrace convention over configuration for most of the aspects of the application.
 
-A couple of deployment details like name, image, etc... will be persisted in database. In memory db like h2 would be a good fit to run project locally with less dependencies
+The internal package and class layout is more Domain Driven than layered.
 
-Good exception handling design
+Exception handling can be further specialized by introducing new exception types and mapping them in a ControllerAdvice to specific error codes when the client needs to differentiate certain flows. For arguments sake I have implemented a Conflict which occurs when a Deployment by the given already exists, so I introduced the exception type DeploymentAlreadyExistsException.
 
-Relay on clean code practices and keep in mind that your codebase will be reviewed according to that patterns.
+For communicating with the k8s cluster I have used the official Java client, but tried to keep the service layer agnostic of the chosen k8s client, so a refactoring of the client layer would not impact either business logic, or contracts.
 
-Good unit test coverage for REST API and provide detail in README.md to run test coverages
+An enhancement would be to introduce DTOs making the REST API layer even more agnostic to the underlying service Value Objects, but for the sake of the challenge I considered it overkill, since I don't have heavy logic in the application.
 
-Assume that, kubernetes cluster is on an external infrastructure, and prepare your client according to that manner. Your REST API will use that client to create & list deployments on k8s cluster.
+Configuring the K8s connection & auth can be done using the application YAML, you can either pass in a kube config file `~/.kube/config` or use explicit configuration. A properly configured spring bean should be injected into the context by the Configuration class.
 
-Use JWT token to access REST API from UI project
+I have used the lombok library to generate accessors, getters, setters and builders for my DTOs and Value Objects(VO) avoiding boilerplate code.
 
-Prepare a README.md to show how to execute project and a quick design schema will be a plus
+Authentication is done by JWT tokens, issued by Google and verified on the backend. The implementation takes as parameter the discovery document and can automatically fetch JWKS and validate token based on `kid` header. In google's case there is a slight mismatch between the discovery documents host (with `https` scheme) and the actual value in the `iss` claim which gets verified, so I had to manually pass in the JWKS URL.
 
-Once you finished your work, put all the necessary content within a git project that includes a README.md that will help us how to execute flow on our side. It can be Github, Gitlab, or Bitbucket. If it will be a private repository, please provide read access to user huseyinbabal
+For demonstrations sake I have saved into the database the deployment name and image, but I am not sure this adds value, so I tried decoupling it from main application logic using Spring's BAU event publishing mechanism.
+Currently it is sync, but could be refactored to be off the request thread for more independence, since it is not necessary for formulating the response.
 
-Prevent Gold Plating! Do what is said in requirements
+## Frontend
 
-Prove that you are the Rock'n Roll of Spring Boot and Kubernetes.
+I have implemented a very basic React based UI, probably it is not flawless, also error handling is absolutely missing.
+
+I have used an infinite scrolling component to intelligently consume the RESTful pagination provided by the deployments call.
+
+
+# Links
+
+* [Original Assignment](./ASSIGNMENT.md "Assignment Description")
+
