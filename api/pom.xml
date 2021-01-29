@@ -20,7 +20,7 @@
     <properties>
         <java.version>12</java.version>
 
-        <k8s-client.version>6.0.1</k8s-client.version>
+        <k8s-client.version>9.0.2</k8s-client.version>
         <adal4j.version>1.6.4</adal4j.version>
     </properties>
 
